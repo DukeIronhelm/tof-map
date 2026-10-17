@@ -2398,3 +2398,58 @@
     y: 113
     z: -9919
   color: ""
+- name: North Pole B1
+  desc: ""
+  origin:
+    x: 8055
+    y: 83
+    z: -4539
+  destination:
+    x: 7493
+    y: 39
+    z: -9747
+  color: ""
+- name: North Pole B2
+  desc: ""
+  origin:
+    x: 7506
+    y: 35
+    z: -9732
+  destination:
+    x: -189
+    y: 102
+    z: -8023
+  color: ""
+- name: North Pole B3
+  desc: ""
+  origin:
+    x: 113
+    y: 28
+    z: -8024
+  destination:
+    x: -7363
+    y: 84
+    z: -15467
+  color: ""
+- name: North Pole B4
+  desc: ""
+  origin:
+    x: -7371
+    y: 79
+    z: -15434
+  destination:
+    x: -2648
+    y: 125
+    z: -21048
+  color: ""
+- name: North Pole B5
+  desc: ""
+  origin:
+    x: -2661
+    y: 75
+    z: -20986
+  destination:
+    x: -1765
+    y: 21
+    z: -27103
+  color: ""
