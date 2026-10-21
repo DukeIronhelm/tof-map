@@ -1,25 +1,25 @@
 import L from 'leaflet';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-// ── Star polygon points ────────────────────────────────────────────────────
-// 5-pointed star centred at (8,8) in a 16×16 viewBox.
-// Outer radius = 7, inner radius = 2.8 (≈ R × 0.4).
-const STAR_POINTS =
-  '8,1 9.65,5.73 14.66,5.84 10.66,8.87 12.11,13.66 8,10.8 3.89,13.66 5.34,8.87 1.34,5.84 6.36,5.73'
-
 // ── DiamondIcon ────────────────────────────────────────────────────────────
 
 export interface DiamondIconProps {
   bg?: string
   label?: string
+  selected?: boolean
 }
 
 /**
  * Diamond-shaped marker used for regular landmarks.
  */
-export function DiamondIcon({ bg = '#4a90d9', label }: DiamondIconProps) {
+export function DiamondIcon({ bg = '#4a90d9', label, selected = false }: DiamondIconProps) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      filter: selected ? 'drop-shadow(0 0 4px #fff) drop-shadow(0 0 8px rgba(255, 255, 255, 0.8))' : undefined,
+    }}>
       <div
         style={{
           width: 14,
@@ -47,28 +47,32 @@ export function DiamondIcon({ bg = '#4a90d9', label }: DiamondIconProps) {
   )
 }
 
-export interface StarIconProps {
-  color?: string
+export interface EmojiIconProps {
+  emoji: string
   label?: string
+  selected?: boolean
 }
 
-export function StarIcon({ color = '#FFD700', label }: StarIconProps) {
+export function EmojiIcon({ emoji, label, selected = false }: EmojiIconProps) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <svg
-        width={28}
-        height={28}
-        viewBox="0 0 16 16"
-        style={{ filter: 'drop-shadow(0 0 4px #000)' }}
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      filter: selected ? 'drop-shadow(0 0 4px #fff) drop-shadow(0 0 8px rgba(255, 255, 255, 0.8))' : undefined,
+    }}>
+      <span
+        style={{
+          width: 32,
+          height: 32,
+          fontSize: 28,
+          lineHeight: '32px',
+          textAlign: 'center',
+          filter: 'drop-shadow(0 0 3px #000)',
+        }}
       >
-        <polygon
-          points={STAR_POINTS}
-          fill={color}
-          stroke="#fff"
-          strokeWidth={1.2}
-          strokeLinejoin="round"
-        />
-      </svg>
+        {emoji}
+      </span>
       {label && (
         <span
           style={{
@@ -91,8 +95,8 @@ export function StarIcon({ color = '#FFD700', label }: StarIconProps) {
 /**
  * Creates a Leaflet divIcon from a DiamondIcon.
  */
-export function createDiamondIcon(bg?: string, label?: string): L.DivIcon {
-  const html = renderToStaticMarkup(<DiamondIcon bg={bg} label={label} />)
+export function createDiamondIcon(bg?: string, label?: string, selected = false): L.DivIcon {
+  const html = renderToStaticMarkup(<DiamondIcon bg={bg} label={label} selected={selected} />)
   return L.divIcon({
     className: '',
     html,
@@ -104,8 +108,8 @@ export function createDiamondIcon(bg?: string, label?: string): L.DivIcon {
 /**
  * Creates a Leaflet divIcon from a StarIcon.
  */
-export function createStarIcon(color?: string, label?: string): L.DivIcon {
-  const html = renderToStaticMarkup(<StarIcon color={color} label={label} />)
+export function createEmojiIcon(emoji: string, label?: string, selected = false): L.DivIcon {
+  const html = renderToStaticMarkup(<EmojiIcon emoji={emoji} label={label} selected={selected} />)
   return L.divIcon({
     className: '',
     html,
@@ -113,3 +117,4 @@ export function createStarIcon(color?: string, label?: string): L.DivIcon {
     iconAnchor: [17, 17],
   })
 }
+

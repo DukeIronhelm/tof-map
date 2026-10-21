@@ -46,7 +46,14 @@ export default function HomePage() {
   // TODO: move this somewhere more suitable
   const graph = new POIGraph()
   for (const landmark of landmarksData) {
-    graph.addNode(landmark.name, landmark.location, 'landmark', landmark.desc, undefined, landmark.special)
+    graph.addNode(
+      landmark.name,
+      landmark.location,
+      'landmark',
+      landmark.desc,
+      undefined,
+      landmark.icon
+    )
   }
   for (const translocator of translocatorsData) {
     graph.addNode(translocator.name + " Origin", translocator.origin, 'translocator', translocator.desc, translocator.color)

@@ -7,10 +7,11 @@ import { GraphNode } from '@/utils/graph';
 
 interface TranslocatorsLayerProps {
   translocators: GraphNode[]
+  selectedNodeId?: string
   onPointClick?: (node: GraphNode) => void
 }
 
-export default function TranslocatorsLayer({ translocators, onPointClick }: TranslocatorsLayerProps) {
+export default function TranslocatorsLayer({ translocators, selectedNodeId, onPointClick }: TranslocatorsLayerProps) {
   const map = useMap()
   
   // Track rendered links to avoid drawing lines twice
@@ -61,6 +62,20 @@ export default function TranslocatorsLayer({ translocators, onPointClick }: Tran
             )}
             
             {/* Translocator Node */}
+            {node.id === selectedNodeId && (
+              <CircleMarker
+                center={[pos.z, pos.x]}
+                pathOptions={{
+                  color: "white",
+                  weight: 2,
+                  opacity: 0.8,
+                  fillColor: "white",
+                  fillOpacity: 0.18,
+                }}
+                radius={10}
+                interactive={false}
+              />
+            )}
             <CircleMarker
               eventHandlers={{
                 click: () => { 

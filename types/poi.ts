@@ -9,7 +9,6 @@ export interface Landmark {
     icon?: string;
     location: POI;
     desc?: string;
-    special?: boolean;
 }
 
 export interface Translocator {
