@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic'
 import { convertToLeafletCoords } from '@/utils/game'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import InfoPanel from './InfoPanel'
 import CoordinatePanel from './CoordinatePanel'
 import { GraphNode, POIGraph } from '@/utils/graph'
@@ -36,7 +36,8 @@ function GameMapContent({ nodes }: GameMapProps) {
   const location = convertToLeafletCoords({ x: 0, y: 100, z: 0 })
   const [selectedPoint, setSelectedPoint] = useState<GraphNode | null>(null)
   const [showUncoloredTranslocators, setShowUncoloredTranslocators] = useState(true)
-  const { isNavigating, route, startNavigation, clearNavigation, setGraph } = useNavigation()
+  const { isNavigating, route, startNavigation, clearNavigation, setGraph, setOrigin, setMaxWalkDistance } = useNavigation()
+  const restoredRouteFromUrl = useRef(false)
 
   // Separate nodes into landmarks and translocators
   const lm = nodes.filter((n) => n.type === 'landmark')
@@ -89,6 +90,36 @@ function GameMapContent({ nodes }: GameMapProps) {
   useEffect(() => {
     setGraph(graph)
   }, [graph, setGraph])
+
+  useEffect(() => {
+    if (restoredRouteFromUrl.current) return
+    restoredRouteFromUrl.current = true
+
+    const params = new URLSearchParams(window.location.search)
+    const originId = params.get('from')
+    const destinationId = params.get('to')
+    if (!originId || !destinationId) return
+
+    const origin = nodes.find((node) => node.id === originId)
+    const destination = nodes.find((node) => node.id === destinationId)
+    if (!origin || !destination) return
+
+    const walkDistance = params.get('walk')
+    if (walkDistance && /^\d+$/.test(walkDistance)) {
+      const parsedDistance = Number(walkDistance)
+      if (
+        Number.isSafeInteger(parsedDistance) &&
+        parsedDistance >= 100 &&
+        parsedDistance <= 5000 &&
+        parsedDistance % 100 === 0
+      ) {
+        setMaxWalkDistance(parsedDistance)
+      }
+    }
+
+    startNavigation(destination)
+    setOrigin(origin)
+  }, [nodes, setMaxWalkDistance, setOrigin, startNavigation])
 
   const handleNavigate = (node: GraphNode) => {
     startNavigation(node)

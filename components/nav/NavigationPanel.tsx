@@ -7,7 +7,7 @@ import { GraphNode } from '@/utils/graph'
 import { Button } from '../ui/button'
 import { Separator } from '../ui/separator'
 import AutocompleteInput from '../AutocompleteInput'
-import { IconX, IconFlag, IconMapPin, IconArrowsUpDown } from '@tabler/icons-react'
+import { IconX, IconFlag, IconMapPin, IconArrowsUpDown, IconCopy } from '@tabler/icons-react'
 import RouteDisplay from './RouteDisplay'
 import { useRouteMapSync } from '@/hooks/useRouteMapSync'
 
@@ -37,6 +37,11 @@ export default function NavigationPanel({ nodes, onClose }: NavigationPanelProps
   // Local input state - only used while typing, synced on selection
   const [originText, setOriginText] = useState(origin?.id ?? '')
   const [destinationText, setDestinationText] = useState(destination?.id ?? '')
+  const [copiedRouteKey, setCopiedRouteKey] = useState<string | null>(null)
+  const currentRouteKey = origin && destination
+    ? `${origin.id}\u0000${destination.id}\u0000${maxWalkDistance}`
+    : null
+  const routeLinkCopied = currentRouteKey !== null && copiedRouteKey === currentRouteKey
 
   // Map sync hook
   useRouteMapSync({ map, route, graph })
@@ -82,6 +87,22 @@ export default function NavigationPanel({ nodes, onClose }: NavigationPanelProps
     setDestinationText(prevOrigin?.id ?? '')
   }, [origin, destination, setOrigin, setDestination])
 
+  const handleCopyRouteLink = useCallback(async () => {
+    if (!origin || !destination || !route) return
+
+    const routeUrl = new URL(window.location.href)
+    routeUrl.searchParams.set('from', origin.id)
+    routeUrl.searchParams.set('to', destination.id)
+    routeUrl.searchParams.set('walk', String(maxWalkDistance))
+
+    try {
+      await navigator.clipboard.writeText(routeUrl.toString())
+      setCopiedRouteKey(currentRouteKey)
+    } catch {
+      setCopiedRouteKey(null)
+    }
+  }, [currentRouteKey, destination, maxWalkDistance, origin, route])
+
   const handleClose = useCallback(() => {
     map.dragging.enable()
     map.scrollWheelZoom.enable()
@@ -95,14 +116,27 @@ export default function NavigationPanel({ nodes, onClose }: NavigationPanelProps
       {/* Header */}
       <div className="flex items-center justify-between p-4 pb-2 shrink-0">
         <h3 className="font-semibold text-lg leading-tight">Navigation</h3>
-        <Button
-          variant="secondary"
-          size="icon"
-          className="h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background"
-          onClick={handleClose}
-        >
-          <IconX className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          {route && origin && destination && (
+            <Button
+              variant="ghost"
+              size="icon"
+              title={routeLinkCopied ? "Route link copied" : "Copy route link"}
+              aria-label={routeLinkCopied ? "Route link copied" : "Copy route link"}
+              onClick={() => void handleCopyRouteLink()}
+            >
+              <IconCopy className="h-4 w-4" />
+            </Button>
+          )}
+          <Button
+            variant="secondary"
+            size="icon"
+            className="h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background"
+            onClick={handleClose}
+          >
+            <IconX className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Location Inputs */}
