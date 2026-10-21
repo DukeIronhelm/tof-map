@@ -28,11 +28,6 @@ const NavigationLayer = dynamic(() => import('@/components/nav/NavigationLayer')
   ssr: false
 })
 
-const TileLayer = dynamic(() => import('react-leaflet/TileLayer').then(mod => mod.TileLayer), {
-  ssr: false
-})
-
-
 interface GameMapProps {
   nodes: GraphNode[]
 }
@@ -93,11 +88,6 @@ function GameMapContent({ nodes }: GameMapProps) {
         position={[location.z, location.x]} 
         zoom={-4}
         >
-        {/* <TileLayer
-          url="/world/5/{x}_{y}.png"
-          tileSize={256}
-          zIndex={-1000}
-        /> */}
         <LandmarksLayer 
           landmarks={lm} 
           onPointClick={(node) => setSelectedPoint(node)}/>

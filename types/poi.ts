@@ -6,7 +6,7 @@ export interface POI {
 
 export interface Landmark {
     name: string;
-    icon: string;
+    icon?: string;
     location: POI;
     desc?: string;
     special?: boolean;
