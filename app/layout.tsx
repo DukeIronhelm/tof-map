@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Translocator Map",
-  description: "",
+  description: "An interactive map of Vintage Story landmarks and translocators with route planning.",
 };
 
 export default function RootLayout({

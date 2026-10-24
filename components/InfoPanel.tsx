@@ -6,7 +6,7 @@ import { CopyCommandButton } from "./CopyWaypointButton"
 import Image from "next/image"
 import { useMap } from "react-leaflet"
 import { convertToLeafletCoords } from "@/utils/game"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import slugify from "slugify"
 
 interface InfoPanelProps {
@@ -18,6 +18,7 @@ interface InfoPanelProps {
 
 export default function InfoPanel({ node, onClose, onLinkedToClick, onNavigate }: InfoPanelProps) {
   const map = useMap()
+  const [imageErrorNodeId, setImageErrorNodeId] = useState<string | null>(null)
 
   useEffect(() => {
     const coords = convertToLeafletCoords(node.location)
@@ -31,18 +32,31 @@ export default function InfoPanel({ node, onClose, onLinkedToClick, onNavigate }
     onClose()
   }
 
+  // Default Landmark SVG from 
+  // https://www.vecteezy.com/vector-art/25745154-silhouette-of-nature-landscape-mountains-forest-in-background-blue-and-green-illustration
+  // Default TL SVG from
+  // https://www.vecteezy.com/vector-art/8170347-black-swirl-spiral-on-white-screen-vector-design
+  const usingFallbackImage = imageErrorNodeId === node.id
+  const imageSrc = usingFallbackImage
+    ? node.type === 'translocator'
+      ? "/images/translocator.svg"
+      : "/images/default.svg"
+    : `/images/${slugify(node.id).toLowerCase()}.png`
+  const imageClassName = usingFallbackImage && node.type === 'translocator'
+    ? "object-contain"
+    : "object-cover"
+
   return (
     <div className="w-80 overflow-hidden shadow-xl rounded-xl bg-card">
       {/* Hero Image */}
       <div className="relative h-40 w-full bg-muted">
         <Image
-          src={`/images/${slugify(node.id).toLowerCase()}.png`}
+          src={imageSrc}
           alt={node.id}
           fill
-          className="object-cover"
-          onError={(e) => {
-            e.currentTarget.style.display = 'none'
-          }}
+          sizes="320px"
+          className={imageClassName}
+          onError={() => setImageErrorNodeId(node.id)}
         />
         <Button
           variant="secondary"

@@ -1,24 +1,59 @@
 import fs from 'fs'
 import path from 'path'
 import yaml from 'js-yaml'
-import { Landmark, Translocator } from '@/types/poi'
+import { Landmark, POI, Translocator } from '@/types/poi'
 import GameMap from '@/components/GameMap'
 import { StrictMode } from 'react'
 import { POIGraph } from '@/utils/graph'
 
-async function getData<T>(fileName: string): Promise<T[]> {
-  const filePath = path.join(process.cwd(), fileName);
-  const fileContents = fs.readFileSync(filePath, 'utf8');
-  return yaml.load(fileContents) as T[];
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-export default async function HomePage() {
-  const landmarksData = await getData<Landmark>('landmarks.yaml');
-  const translocatorsData = await getData<Translocator>('translocators.yaml');
+function isPOI(value: unknown): value is POI {
+  if (!isRecord(value)) return false
+  return ['x', 'y', 'z'].every(
+    (coordinate) => typeof value[coordinate] === 'number' && Number.isFinite(value[coordinate])
+  )
+}
+
+function parseYamlList<T>(
+  value: unknown,
+  isValid: (entry: unknown) => entry is T,
+  source: string
+): T[] {
+  if (!Array.isArray(value) || !value.every(isValid)) {
+    throw new Error(`Invalid data in ${source}`)
+  }
+  return value
+}
+
+export default function HomePage() {
+  const landmarksData = parseYamlList<Landmark>(
+    yaml.load(fs.readFileSync(path.join(process.cwd(), 'landmarks.yaml'), 'utf8')),
+    (entry): entry is Landmark => isRecord(entry) && typeof entry.name === 'string' && isPOI(entry.location),
+    'landmarks.yaml'
+  );
+  const translocatorsData = parseYamlList<Translocator>(
+    yaml.load(fs.readFileSync(path.join(process.cwd(), 'translocators.yaml'), 'utf8')),
+    (entry): entry is Translocator =>
+      isRecord(entry) &&
+      typeof entry.name === 'string' &&
+      isPOI(entry.origin) &&
+      isPOI(entry.destination),
+    'translocators.yaml'
+  );
   // TODO: move this somewhere more suitable
   const graph = new POIGraph()
   for (const landmark of landmarksData) {
-    graph.addNode(landmark.name, landmark.location, 'landmark', landmark.desc, undefined, landmark.special)
+    graph.addNode(
+      landmark.name,
+      landmark.location,
+      'landmark',
+      landmark.desc,
+      undefined,
+      landmark.icon
+    )
   }
   for (const translocator of translocatorsData) {
     graph.addNode(translocator.name + " Origin", translocator.origin, 'translocator', translocator.desc, translocator.color)

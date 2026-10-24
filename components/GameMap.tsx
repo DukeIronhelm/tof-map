@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic'
 import { convertToLeafletCoords } from '@/utils/game'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import InfoPanel from './InfoPanel'
 import CoordinatePanel from './CoordinatePanel'
 import { GraphNode, POIGraph } from '@/utils/graph'
@@ -28,11 +28,6 @@ const NavigationLayer = dynamic(() => import('@/components/nav/NavigationLayer')
   ssr: false
 })
 
-const TileLayer = dynamic(() => import('react-leaflet/TileLayer').then(mod => mod.TileLayer), {
-  ssr: false
-})
-
-
 interface GameMapProps {
   nodes: GraphNode[]
 }
@@ -40,11 +35,25 @@ interface GameMapProps {
 function GameMapContent({ nodes }: GameMapProps) {
   const location = convertToLeafletCoords({ x: 0, y: 100, z: 0 })
   const [selectedPoint, setSelectedPoint] = useState<GraphNode | null>(null)
-  const { isNavigating, startNavigation, clearNavigation, setGraph } = useNavigation()
+  const [showUncoloredTranslocators, setShowUncoloredTranslocators] = useState(true)
+  const { isNavigating, route, startNavigation, clearNavigation, setGraph, setOrigin, setMaxWalkDistance } = useNavigation()
+  const restoredRouteFromUrl = useRef(false)
 
   // Separate nodes into landmarks and translocators
   const lm = nodes.filter((n) => n.type === 'landmark')
   const tl = nodes.filter((n) => n.type === 'translocator')
+  const routeNodeIds = route ? new Set(route.nodes) : null
+  const selectedTranslocatorIds = new Set([
+    selectedPoint?.type === 'translocator' ? selectedPoint.id : undefined,
+    selectedPoint?.type === 'translocator' ? selectedPoint.linkedTranslocatorId : undefined,
+  ])
+  const visibleTranslocators = routeNodeIds
+    ? tl.filter((node) => routeNodeIds.has(node.id))
+    : tl.filter((node) =>
+      showUncoloredTranslocators ||
+      Boolean(node.color?.trim()) ||
+      selectedTranslocatorIds.has(node.id)
+    )
 
   // Build graph from nodes
   const graph = useMemo(() => {
@@ -52,7 +61,14 @@ function GameMapContent({ nodes }: GameMapProps) {
     
     // Add all nodes
     for (const node of nodes) {
-      g.addNode(node.id, node.location, node.type, node.color)
+      g.addNode(
+        node.id,
+        node.location,
+        node.type,
+        node.description,
+        node.color,
+        node.icon
+      )
     }
 
     // Link translocators (they come in pairs: "Name Origin" and "Name Destination")
@@ -75,6 +91,36 @@ function GameMapContent({ nodes }: GameMapProps) {
     setGraph(graph)
   }, [graph, setGraph])
 
+  useEffect(() => {
+    if (restoredRouteFromUrl.current) return
+    restoredRouteFromUrl.current = true
+
+    const params = new URLSearchParams(window.location.search)
+    const originId = params.get('from')
+    const destinationId = params.get('to')
+    if (!originId || !destinationId) return
+
+    const origin = nodes.find((node) => node.id === originId)
+    const destination = nodes.find((node) => node.id === destinationId)
+    if (!origin || !destination) return
+
+    const walkDistance = params.get('walk')
+    if (walkDistance && /^\d+$/.test(walkDistance)) {
+      const parsedDistance = Number(walkDistance)
+      if (
+        Number.isSafeInteger(parsedDistance) &&
+        parsedDistance >= 100 &&
+        parsedDistance <= 5000 &&
+        parsedDistance % 100 === 0
+      ) {
+        setMaxWalkDistance(parsedDistance)
+      }
+    }
+
+    startNavigation(destination)
+    setOrigin(origin)
+  }, [nodes, setMaxWalkDistance, setOrigin, startNavigation])
+
   const handleNavigate = (node: GraphNode) => {
     startNavigation(node)
     setSelectedPoint(null)
@@ -93,16 +139,13 @@ function GameMapContent({ nodes }: GameMapProps) {
         position={[location.z, location.x]} 
         zoom={-4}
         >
-        {/* <TileLayer
-          url="/world/5/{x}_{y}.png"
-          tileSize={256}
-          zIndex={-1000}
-        /> */}
         <LandmarksLayer 
-          landmarks={lm} 
+          landmarks={lm}
+          selectedNodeId={selectedPoint?.id}
           onPointClick={(node) => setSelectedPoint(node)}/>
         <TranslocatorsLayer 
-          translocators={tl} 
+          translocators={visibleTranslocators}
+          selectedNodeId={selectedPoint?.id}
           onPointClick={(node) => setSelectedPoint(node)}/>
         <NavigationLayer />
         <CoordinatePanel /> 
@@ -117,6 +160,10 @@ function GameMapContent({ nodes }: GameMapProps) {
                 }
               }}
               nodes={nodes}
+              showUncoloredTranslocators={showUncoloredTranslocators}
+              onToggleUncoloredTranslocators={() =>
+                setShowUncoloredTranslocators((show) => !show)
+              }
             />
           )}
           {isNavigating ? (

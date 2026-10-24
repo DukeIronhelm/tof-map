@@ -3,14 +3,15 @@ import { LayerGroup, Marker, useMap } from "react-leaflet"
 import { convertToLeafletCoords } from "@/utils/game"
 import POITooltip from "@/components/POITooltip"
 import { GraphNode } from '@/utils/graph';
-import { createDiamondIcon, createStarIcon } from '@/components/map/MapIcons';
+import { createDiamondIcon, createEmojiIcon } from '@/components/map/MapIcons';
 
 interface LandmarksLayerProps {
   landmarks: GraphNode[]
+  selectedNodeId?: string
   onPointClick?: (node: GraphNode) => void
 }
 
-export default function LandmarksLayer({ landmarks, onPointClick }: LandmarksLayerProps) {
+export default function LandmarksLayer({ landmarks, selectedNodeId, onPointClick }: LandmarksLayerProps) {
   const map = useMap()
 
   return (
@@ -27,9 +28,9 @@ export default function LandmarksLayer({ landmarks, onPointClick }: LandmarksLay
             }}
             key={landmark.id || index} 
             position={[c.z, c.x]}
-            icon={landmark.special
-              ? createStarIcon(landmark.color ?? '#FFD700', landmark.id)
-              : createDiamondIcon(landmark.color, landmark.id)
+            icon={landmark.icon
+              ? createEmojiIcon(landmark.icon, landmark.id, landmark.id === selectedNodeId)
+              : createDiamondIcon(landmark.color, landmark.id, landmark.id === selectedNodeId)
             }
           >
             <POITooltip 

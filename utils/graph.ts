@@ -12,8 +12,8 @@ export interface GraphNode {
     linkedTranslocatorId?: string
     /** Custom color for the node */
     color?: string
-    /** For landmarks: marks this as a special/notable location */
-    special?: boolean
+    /** Optional emoji marker for landmarks */
+    icon?: string
 }
 
 /**
@@ -76,14 +76,21 @@ export class POIGraph {
     /**
      * Adds a node to the graph
      */
-    addNode(id: string, location: POI, type: GraphNode['type'], description?: string, color?: string, special?: boolean): void {
+    addNode(
+        id: string,
+        location: POI,
+        type: GraphNode['type'],
+        description?: string,
+        color?: string,
+        icon?: string
+    ): void {
         this.nodes.set(id, {
             id,
             location,
             type,
             description: description || '',
             color: color,
-            special: special,
+            icon,
         })
     }
 
